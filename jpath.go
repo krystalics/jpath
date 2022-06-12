@@ -218,3 +218,29 @@ func strToMap(str string, isDeep bool) (map[string]interface{}, error) {
 	}
 	return m, nil
 }
+
+//FindString find the value and not process the error
+func (jp *JPath) FindString(path string) string {
+	value, _ := jp.Find(path)
+	if value != nil {
+		return value.(string)
+	}
+	return ""
+}
+
+func (jp *JPath) FindInt64(path string) int64 {
+	value, _ := jp.Find(path)
+	if value != nil {
+		return value.(int64)
+	}
+	return 0
+}
+
+func (jp *JPath) FindFloat64(path string) float64 {
+	value, _ := jp.Find(path)
+	if value != nil {
+		return value.(float64)
+	}
+
+	return 0.0
+}
