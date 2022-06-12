@@ -24,18 +24,22 @@ func TestNewConcurrencySafe(t *testing.T) {
 
 func demo(t *testing.T, jPath *JPath) {
 	expectedValue := "school"
-	realTag1 := jPath.Find("labels.level_1.tag_name")
+	realTag1, err := jPath.Find("labels.level_1.tag_name")
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
 	if realTag1 != expectedValue {
 		t.Errorf("Expected: %v\n Got: %v", expectedValue, realTag1)
 	}
 
 	expectedValue = "class"
-	realTag2 := jPath.Find("labels.level_2.tag_name")
+	realTag2, _ := jPath.Find("labels.level_2.tag_name")
 	if realTag2 != expectedValue {
 		t.Errorf("Expected: %v\n Got: %v", expectedValue, realTag2)
 	}
 
-	val := jPath.Find("simpleArray[1]")
+	val, _ := jPath.Find("simpleArray[1]")
 	//from  str convert to number, it will be float64
 	if val != 2.0 {
 		t.Errorf("Expected: %v\n Got: %v", 2, val)

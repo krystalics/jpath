@@ -2,6 +2,7 @@ package jpath
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -115,21 +116,23 @@ func deepRecursion(m map[string]interface{}) {
 
 //Find 除了在 NewConcurrencySafe的构建中、并发安全
 // 其他的New方法构造出来的由于需要写map、所以并不安全
-func (jp *JPath) Find(path string) interface{} {
+func (jp *JPath) Find(path string) (interface{}, error) {
 	keys := strings.Split(path, jp.Separator)
 	index := len(keys) - 1 //路径的尽头
 
 	m := jp.data
 	for i, v := range keys {
 		if m == nil {
-			fmt.Printf("path %+v not found ", path)
-			return nil
+			return nil, errors.New(fmt.Sprintf("path %+v not found ", path))
 		}
 		//数组判断
 		if !strings.HasSuffix(v, ARRAY_TYPE_SUFFIX) {
 			data := m[v]
 			if i == index {
-				return data
+				if data == nil {
+					return nil, errors.New(fmt.Sprintf("path %+v not found ", path))
+				}
+				return data, nil
 			}
 			switch data.(type) {
 			case map[string]interface{}:
@@ -139,18 +142,17 @@ func (jp *JPath) Find(path string) interface{} {
 				m[v] = m_sub
 				m = m_sub
 			case []interface{}:
-				fmt.Println("key error,array should be [index]")
-				return nil
+				return nil, errors.New(fmt.Sprintf("key %+v error,array should be like this [index]", path))
+
 			default:
-				fmt.Printf("key %+v error,it is not string or map", v)
-				return nil
+				return nil, errors.New(fmt.Sprintf("key %+v error,it is not string or map", v))
 			}
 		} else {
 			//对于数组需要特殊处理
 			flag := ARRAY_REGEX.FindString(v)
 			value, err := strconv.Atoi(flag[1 : len(flag)-1])
 			if err != nil {
-				fmt.Printf("illegal index args %+v", flag)
+				return nil, errors.New(fmt.Sprintf("illegal index args %+v", flag))
 			}
 			key := strings.Split(v, flag)[0]
 			data := m[key]
@@ -158,12 +160,14 @@ func (jp *JPath) Find(path string) interface{} {
 			case []interface{}:
 				arr := data.([]interface{})
 				if value > len(arr)-1 {
-					fmt.Printf("key %+v error,it is larger than array last index %+v", v, len(arr)-1)
-					return nil
+					return nil, errors.New(fmt.Sprintf("key %+v error,it is larger than array last index %+v", v, len(arr)-1))
 				}
 				tmp := arr[value]
 				if i == index {
-					return tmp
+					if tmp == nil {
+						return nil, errors.New(fmt.Sprintf("path %+v not found ", path))
+					}
+					return tmp, nil
 				}
 				switch tmp.(type) {
 				case map[string]interface{}:
@@ -173,32 +177,33 @@ func (jp *JPath) Find(path string) interface{} {
 					m[v] = m_sub
 					m = m_sub
 				default:
-					fmt.Printf("key %+v error,it is not string or map", v)
-					return nil
+					return nil, errors.New(fmt.Sprintf("key %+v error,it is not string or map", v))
 				}
 				//在完全递归场景下可能出现的类型
 			case []map[string]interface{}:
 
 				arr := data.([]map[string]interface{})
 				if value > len(arr)-1 {
-					fmt.Printf("key %+v error,it is larger than array last index %+v", v, len(arr)-1)
-					return nil
+					return nil, errors.New(fmt.Sprintf("key %+v error,it is larger than array last index %+v", v, len(arr)-1))
 				}
 				tmp := arr[value]
 				if i == index {
-					return tmp
+					if tmp == nil {
+						return nil, errors.New(fmt.Sprintf("path %+v not found ", path))
+					}
+					return tmp, nil
 				}
 
 				m = tmp
 
 			default:
-				fmt.Printf("key %+v error,it is not a array", v)
-				return nil
+				return nil, errors.New(fmt.Sprintf("key %+v error,it is not a array", v))
+
 			}
 		}
 	}
 
-	return nil
+	return nil, errors.New(fmt.Sprintf("path %+v not found ", path))
 }
 
 //isDeep 表示并发安全需要的完全递归、所以当json转换失败后、不再打印日志
@@ -209,7 +214,6 @@ func strToMap(str string, isDeep bool) (map[string]interface{}, error) {
 		if isDeep {
 			return nil, err
 		}
-		fmt.Printf("str to map error %+v", err)
 		return nil, err
 	}
 	return m, nil
