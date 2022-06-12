@@ -19,7 +19,11 @@ import  "github.com/krystalics/jpath"
 func main() {
 	const json = `{"name":{"first":"lin","last":"jia"},"age":61}`
 	jPath, _ := jpath.New(json)
-	jPath.Find("name.first")
+	name,err := jPath.Find("name.first")
+	if err != nil {
+		return
+	}
+	//...
 }
 ```
 
@@ -33,7 +37,11 @@ func main() {
 	jPath, _ := jpath.NewConcurrencySafe(json)
 	for i := 0; i < 100; i++ {
 		go func() {
-			jPath.Find("name.first")
+			name,err := jPath.Find("name.first")
+			if err != nil {
+				return
+			}
+			//...
 		}()
 	}
 }
