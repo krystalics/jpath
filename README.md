@@ -2,7 +2,7 @@
 
 #### Installation
 ```
-go get github.com/krystalics/jpath@v0.0.1
+go get github.com/krystalics/jpath@v0.0.2
 ```
 
 #### Usage
